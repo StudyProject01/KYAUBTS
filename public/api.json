@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Sirajganj Sadar",
+    "From": "Sirajganj_Sadar",
+    "img": "bus0.jpeg",
+    "To": "Campus"
+  },
+  {
+    "id": 2,
+    "name": "Ullapara",
+    "From": "Ullapara",
+    "img": "bus2.jpeg",
+    "To": "Campus"
+  },
+  {
+    "id": 3,
+    "name": "Shahzadpur",
+    "From": "shahzadpur",
+    "img": "bus4.jpeg",
+    "To": "Campus"
+  },
+  {
+    "id": 4,
+    "name": "Pabna",
+    "From": "Pabna",
+    "img": "bus1.jpeg",
+    "To": "Campus"
+  }
+]
+
+

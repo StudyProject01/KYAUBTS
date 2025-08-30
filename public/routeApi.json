@@ -1,0 +1,126 @@
+[
+  {
+    "id": 1,
+    "Location": "Sirajganj_Sadar",
+    "Rute": [
+      "Bazar_Station",
+      "Railgate",
+      "Mirpur",
+      "Bonbaria",
+      "Kaisahata_Bazar",
+      "Kadar_More",
+      "Saydabad",
+      "Somespur",
+      "MukondoGati",
+      "Kegir_more",
+      "Campus"
+    ],
+    "Distance": [
+      "0.5K.M",
+      "1.4K.M",
+      "1.4K.M",
+      "2K.M",
+      "1.9K.M",
+      "2.4K.M",
+      "3.7K.M",
+      "7.7K.M",
+      "5.8K.M",
+      "1.6K.M"
+    ]
+  },
+  {
+    "id": 2,
+    "Location": "Ullapara",
+    "Rute": [
+      "Kaowak_More",
+      "Srikola",
+      "M.P_Road",
+      "Boalia_Market",
+      "Hatikumrul",
+      "Panchila_Bazar",
+      "Simanto_Bazar",
+      "Kadar_More",
+      "Syedabad",
+      "Someshpur",
+      "MukundaGati",
+      "Kegir_more",
+      "Campus"
+    ],
+    "Distance": [
+      "0.5K.M",
+      "2.3K.M",
+      "4.3K.M",
+      "5K.M",
+      "2.2K.M",
+      "6K.M",
+      "6.7K.M",
+      "2.4K.M",
+      "6.7K.M",
+      "7.7K.M",
+      "5.8K.M",
+      "1.6K.M"
+    ]
+  },
+  {
+    "id": 3,
+    "Location": "Shahzadpur",
+    "Rute": [
+      "Pressclub",
+      "Thanarghat",
+      "CNG garage",
+      "Narua club",
+      "Srifoltala",
+      "Beltoli(U.P)",
+      "Ghorshal",
+      "Khukni bazar",
+      "Rupnai",
+      "Kejir mor",
+      "Campus"
+    ],
+    "Distance": [
+      "1.0K.M",
+      "0.3K.M",
+      "2.2K.M",
+      "1.2K.M",
+      "2.9K.M",
+      "1.8K.M",
+      "2.1K.M",
+      "2.0K.M",
+      "2.5K.M",
+      "1.8K.M"
+    ]
+  },
+  {
+    "id": 4,
+    "Location": "Pabna",
+    "Rute": [
+      "Bera",
+      "Sarisha",
+      "Binyadair",
+      "Baghabari",
+      "Dilruba",
+      "Pressclub",
+      "Thanarghat",
+      "Srifaltala",
+      "Beltoli",
+      "Khukni",
+      "Rupnai",
+      "Kejir Mor",
+      "Campus"
+    ],
+    "Distance": [
+      "3.0K.M",
+      "3.0K.M",
+      "2.7K.M",
+      "4.2K.M",
+      "1.5K.M",
+      "1.0K.M",
+      "3.7K.M",
+      "2.9K.M",
+      "3.9K.M",
+      "2.0K.M",
+      "2.5K.M",
+      "1.8K.M"
+    ]
+  }
+]
