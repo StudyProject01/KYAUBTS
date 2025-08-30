@@ -1,64 +1,38 @@
 import React from 'react';
 import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 import { Carousel } from 'react-responsive-carousel';
-import "./home.css";
-
+import "./home.css"
 const Banner = () => {
     return (
         <div>
-            /* Carousel */
-            <Carousel
-                className='uppercase'
+       <Carousel className='uppercase'
                 autoPlay={true}
                 interval={3000}
-                infiniteLoop={true}
-                showThumbs={false}
-                showStatus={false}
-            >
-                <div className='relative'>
-                    <img
-                        src="bus0.jpeg"
-                        className="w-full h-48 sm:h-64 md:h-96 object-cover"
-                        alt="Sirajganj Sadar"
-                    />
-                    <p className="legend text-sm sm:text-base md:text-lg">Sirajganj_Sadar</p>
+                infiniteLoop={true}>
+                <div className='tops'>
+                    <img src="bus0.jpeg" />
+                    <p className="legend">Sirajganj_Sadar</p>
                 </div>
-                <div className='relative'>
-                    <img
-                        src="bus2.jpeg"
-                        className="w-full h-48 sm:h-64 md:h-96 object-cover"
-                        alt="Ullapara"
-                    />
-                    <p className="legend text-sm sm:text-base md:text-lg">Ullapara</p>
+                <div className='tops'>
+                    <img src="bus2.jpeg" />
+                    <p className="legend">Ullapara</p>
                 </div>
-                <div className='relative'>
-                    <img
-                        src="bus4.jpeg"
-                        className="w-full h-48 sm:h-64 md:h-96 object-cover"
-                        alt="Shahzadpur"
-                    />
-                    <p className="legend text-sm sm:text-base md:text-lg">Shahzadpur</p>
+                <div className='tops' >
+                    <img src="bus4.jpeg" />
+                    <p className="legend ">shahzadpur</p>
                 </div>
-                <div className='relative'>
-                    <img
-                        src="bus1.jpeg"
-                        className="w-full h-48 sm:h-64 md:h-96 object-cover"
-                        alt="Pabna"
-                    />
-                    <p className="legend text-sm sm:text-base md:text-lg">Pabna</p>
+                <div className='tops'>
+                     <img src="bus1.jpeg" />
+                    <p className="legend">Pabna</p>
                 </div>
+                
             </Carousel>
-
-            /* Bus Schedule */
-            <div className="mt-10 px-4">
-                <p className='text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-5'>BUS SCHEDULE</p>
-                <img
-                    src="schedule.jpeg"
-                    alt="Bus Schedule"
-                    className='w-full sm:w-4/5 md:w-3/5 h-auto md:h-96 mx-auto rounded shadow-lg object-cover'
-                />
+            <div className="">
+                <p className='text-3xl font-bold text-center mt-10 mb-5'>BUS_SCHEDULE </p>
+                <img className='w-[70%] h-96 mb-10 m-auto' src="schedule.jpeg" alt="" />
             </div>
         </div>
+        
     );
 };
 
