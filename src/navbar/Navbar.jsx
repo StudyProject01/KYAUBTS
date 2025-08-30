@@ -1,26 +1,47 @@
-import React from "react";
-import "../index.css";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { HiMenu, HiX } from "react-icons/hi";
+
 const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <div className="bg-orange-500  m-auto p-2">
-      <div className="navbar bg-orange-500 text-white flex justify-between">
-        <div className=" flex items-center  ">
-          <a className=" ">
-            <img src="logo.png" className="w-[45px] rounded-full  " alt="" />
-          </a>
-          <p className="ml-2 font-bold">BusTracking</p>
+    <nav className="bg-orange-500 text-white px-4 sm:px-6 py-2">
+      <div className="flex justify-between items-center max-w-7xl mx-auto">
+        /* Logo */
+        <div className="flex items-center">
+          <img src="logo.png" alt="Logo" className="w-10 h-10 rounded-full" />
+          <p className="ml-2 font-bold text-lg">BusTracking</p>
         </div>
 
-        <div className="flex mr-20">
-          <Link to={"/"} className="ml-5" >Home</Link>
-          <Link to={"/about"} className="ml-5" >About</Link>
-          <Link to={"/route/1"} className="ml-5" >Location</Link>
-          <Link to={"/Contact"} className="ml-5" >Contact</Link>
-          <Link to={"/about/helpline"} className="ml-5" >HelpLine_Key</Link>
+        /* Desktop Links */
+        <div className="hidden md:flex space-x-6">
+          <Link to="/">Home</Link>
+          <Link to="/about">About</Link>
+          <Link to="/route/1">Location</Link>
+          <Link to="/contact">Contact</Link>
+          <Link to="/about/helpline">HelpLine_Key</Link>
+        </div>
+
+        /* Mobile Menu Button */
+        <div className="md:hidden">
+          <button onClick={() => setIsOpen(!isOpen)}>
+            {isOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
-    </div>
+
+      /* Mobile Menu */
+      {isOpen && (
+        <div className="md:hidden mt-2 flex flex-col space-y-2 px-2 pb-2">
+          <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
+          <Link to="/about" onClick={() => setIsOpen(false)}>About</Link>
+          <Link to="/route/1" onClick={() => setIsOpen(false)}>Location</Link>
+          <Link to="/contact" onClick={() => setIsOpen(false)}>Contact</Link>
+          <Link to="/about/helpline" onClick={() => setIsOpen(false)}>HelpLine_Key</Link>
+        </div>
+      )}
+    </nav>
   );
 };
 
