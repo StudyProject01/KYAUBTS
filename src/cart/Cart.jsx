@@ -20,4 +20,3 @@ const Cart = () => {
 };
 
 export default Cart;
-git
