@@ -1,66 +1,162 @@
 [
-  {
-    "id": 1,
-    "Location": "Sirajganj_Sadar",
-    "Rute": [
-      "Bazar_Station",
-      "Railgate",
-      "Mirpur",
-      "Bonbaria",
-      "Kaisahata_Bazar",
-      "Kadar_More",
-      "Saydabad",
-      "Somespur",
-      "MukondoGati",
-      "Kegir_more",
-      "Campus"
-    ],
-    "Distance": [
-      "0.5K.M",
-      "1.4K.M",
-      "1.4K.M",
-      "2K.M",
-      "1.9K.M",
-      "2.4K.M",
-      "3.7K.M",
-      "7.7K.M",
-      "5.8K.M",
-      "1.6K.M"
-    ]
-  },
-  {
-    "id": 2,
-    "Location": "Ullapara",
-    "Rute": [
-      "Kaowak_More",
-      "Srikola",
-      "M.P_Road",
-      "Boalia_Market",
-      "Hatikumrul",
-      "Panchila_Bazar",
-      "Simanto_Bazar",
-      "Kadar_More",
-      "Syedabad",
-      "Someshpur",
-      "MukundaGati",
-      "Kegir_more",
-      "Campus"
-    ],
-    "Distance": [
-      "0.5K.M",
-      "2.3K.M",
-      "4.3K.M",
-      "5K.M",
-      "2.2K.M",
-      "6K.M",
-      "6.7K.M",
-      "2.4K.M",
-      "6.7K.M",
-      "7.7K.M",
-      "5.8K.M",
-      "1.6K.M"
-    ]
-  },
+{
+  "id": 1,
+  "Location": "Sirajganj_Sadar",
+  "Rute": [
+    {
+      "name": "Bazar_Station",
+      "Distance": "0.5K.M",
+      "latitude": 24.45124,
+      "longitude": 89.70253
+    },
+    {
+      "name": "Railgate",
+      "Distance": "1.4K.M",
+      "latitude": 24.45238,
+      "longitude": 89.70658
+    },
+    {
+      "name": "Mirpur",
+      "Distance": "1.4K.M",
+      "latitude": 24.44419,
+      "longitude": 89.70754
+    },
+    {
+      "name": "Bonbaria",
+      "Distance": "2K.M",
+      "latitude": 24.42532,
+      "longitude": 89.70757
+    },
+    {
+      "name": "Kaisahata_Bazar",
+      "Distance": "1.9K.M",
+      "latitude": 24.41044,
+      "longitude": 89.70100
+    },
+    {
+      "name": "Kadar_More",
+      "Distance": "2.4K.M",
+      "latitude": 24.39535,
+      "longitude": 89.69123
+    },
+    {
+      "name": "Saydabad",
+      "Distance": "3.7K.M",
+      "latitude": 24.39224,
+      "longitude": 89.71437
+    },
+    {
+      "name": "Somespur",
+      "Distance": "7.7K.M",
+      "latitude": 24.36139,
+      "longitude": 89.70642
+    },
+    {
+      "name": "MukondoGati",
+      "Distance": "5.8K.M",
+      "latitude": 24.29353,
+      "longitude": 89.69739
+    },
+    {
+      "name": "Kegir_more",
+      "Distance": "1.6K.M",
+      "latitude": 24.24437,
+      "longitude": 89.70024
+    },
+    {
+      "name": "Campus",
+      "Distance": "—",
+      "latitude": 24.23414,
+      "longitude": 89.69828
+    }
+  ]
+}
+,
+{
+  "id": 2,
+  "Location": "Ullapara",
+  "Rute": [
+    {
+      "name": "Kaowak_More",
+      "Distance": "0.5K.M",
+      "latitude": 24.30477,
+      "longitude": 89.56517
+    },
+    {
+      "name": "Srikola",
+      "Distance": "2.3K.M",
+      "latitude": 24.32516,
+      "longitude": 89.56249
+    },
+    {
+      "name": "M.P_Road",
+      "Distance": "4.3K.M",
+      "latitude": 24.34539,
+      "longitude": 89.56130
+    },
+    {
+      "name": "Boalia_Market",
+      "Distance": "5K.M",
+      "latitude": 24.37617,
+      "longitude": 89.54616
+    },
+    {
+      "name": "Hatikumrul",
+      "Distance": "2.2K.M",
+      "latitude": 24.41950,
+      "longitude": 89.55179
+    },
+    {
+      "name": "Panchila_Bazar",
+      "Distance": "6K.M",
+      "latitude": 24.42279,
+      "longitude": 89.57318
+    },
+    {
+      "name": "Simanto_Bazar",
+      "Distance": "6.7K.M",
+      "latitude": 24.41028,
+      "longitude": 89.63017
+    },
+    {
+      "name": "Kadar_More",
+      "Distance": "2.4K.M",
+      "latitude": 24.39535,
+      "longitude": 89.69123
+    },
+    {
+      "name": "Syedabad",
+      "Distance": "6.7K.M",
+      "latitude": 24.39224,
+      "longitude": 89.71437
+    },
+    {
+      "name": "Someshpur",
+      "Distance": "7.7K.M",
+      "latitude": 24.36139,
+      "longitude": 89.70642
+    },
+    {
+      "name": "MukundaGati",
+      "Distance": "5.8K.M",
+      "latitude": 24.29353,
+      "longitude": 89.69739
+    },
+    {
+      "name": "Kegir_more",
+      "Distance": "1.6K.M",
+      "latitude": 24.24437,
+      "longitude": 89.70024
+    },
+    {
+      "name": "Campus",
+      "Distance": "—",
+      "latitude": 24.23414,
+      "longitude": 89.69828
+    }
+  ]
+}
+,
   {
     "id": 3,
     "Location": "Shahzadpur",

@@ -6,8 +6,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBusSide } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { getDatabase, ref, onValue } from "firebase/database";
+import  db from "../../firebase"
 
-// === Distance Calculation (Haversine Formula) ===
+// === Haversine Distance Formula ===
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -22,7 +23,7 @@ function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
 }
 
 export default function Manualbus() {
-  const [RouteTack, SetRoute] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const { busId } = useParams();
 
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
@@ -30,84 +31,89 @@ export default function Manualbus() {
   const [prev, setPrev] = useState(null);
   const [distance, setDistance] = useState(0);
   const [eta, setEta] = useState(null);
+  const [busPosition, setBusPosition] = useState(0); // for smooth animation
 
-  // === Load Route JSON ===
+  // === Load route data ===
   useEffect(() => {
     fetch("/routeApi.json")
       .then((res) => res.json())
-      .then((data) => SetRoute(data));
+      .then((data) => setRoutes(data));
   }, []);
 
-  const findData = RouteTack.find((data) => data.id == busId);
+  const routeData = routes.find((data) => data.id == busId);
 
-  // === Firebase থেকে Bus live location ===
+  // === Firebase Live Location Listener ===
   useEffect(() => {
-    const db = getDatabase();
+    if (!routeData) return;
+    // const db = getDatabase();
     const busRef = ref(db, "bus/currentLocation");
 
     const unsubscribe = onValue(busRef, (snapshot) => {
       const data = snapshot.val();
-
       if (!data) return;
 
       const now = Date.now();
 
       if (prev) {
-        const timeDiff = (now - prev.time) / 1000; // sec
+        const timeDiff = (now - prev.time) / 1000; // seconds
         const dist = getDistanceFromLatLon(prev.lat, prev.lng, data.lat, data.lng);
-
         const newSpeed = (dist / (timeDiff / 3600)); // km/h
         setSpeed(newSpeed);
 
-        // Next stop এর distance বের করা
-        if (findData?.Rute?.length && currentStopIndex < findData.Rute.length - 1) {
-          // Example default coordinate for stops (আপনার JSON-এ রাখতে হবে)
-          const nextStop = findData.Coordinates?.[currentStopIndex + 1];
-          if (nextStop) {
-            const distToNext = getDistanceFromLatLon(
-              data.lat, data.lng,
-              nextStop.lat, nextStop.lng
-            );
-            setDistance(distToNext);
+        // Find nearest stop based on live GPS
+        const nearestIndex = routeData.Rute.reduce((closest, stop, idx) => {
+          const stopLat = stop.latitude;
+          const stopLng = stop.longitude;
+          const d = getDistanceFromLatLon(data.lat, data.lng, stopLat, stopLng);
+          return d < closest.dist ? { index: idx, dist: d } : closest;
+        }, { index: 0, dist: Infinity }).index;
 
-            // ETA = Distance / Speed
-            if (newSpeed > 0) {
-              const timeHr = distToNext / newSpeed;
-              const timeMin = timeHr * 60;
-              setEta(timeMin.toFixed(1)); // মিনিটে দেখাব
-            } else {
-              setEta(null);
-            }
+        setCurrentStopIndex(nearestIndex);
+
+        // Next Stop Distance
+        if (nearestIndex < routeData.Rute.length - 1) {
+          const nextStop = routeData.Rute[nearestIndex + 1];
+          const distToNext = getDistanceFromLatLon(
+            data.lat,
+            data.lng,
+            nextStop.latitude,
+            nextStop.longitude
+          );
+          setDistance(distToNext);
+
+          // ETA Calculation
+          if (newSpeed > 0) {
+            const timeHr = distToNext / newSpeed;
+            const timeMin = timeHr * 60;
+            setEta(timeMin.toFixed(1));
+          } else {
+            setEta(null);
           }
         }
 
-        // Stop index increase করা (dummy logic)
-        if (findData?.Rute?.length) {
-          setCurrentStopIndex((prevIdx) =>
-            prevIdx < findData.Rute.length - 1 ? prevIdx + 1 : 0
-          );
-        }
+        // Smooth animation progress (based on distance ratio)
+        const progress = (nearestIndex / (routeData.Rute.length - 1)) * 100;
+        setBusPosition(progress);
       }
 
       setPrev({ lat: data.lat, lng: data.lng, time: now });
     });
 
     return () => unsubscribe();
-  }, [prev, findData, currentStopIndex]);
+  }, [prev, routeData]);
 
   return (
     <div className="p-4">
       <p className="text-lg font-bold mb-4">
-        {findData?.Location} Route
+        {routeData?.Location} Route
       </p>
 
       <div className="flex flex-row md:flex-col items-start gap-4 relative">
-        {/* === Route List === */}
-        {findData?.Rute?.length ? (
-          <ul className="flex flex-col w-[120px] md:w-auto  sm:flex-row sm:flex-wrap sm:items-start relative">
-            {findData.Rute.map((stop, index) => (
+        {routeData?.Rute?.length ? (
+          <ul className="flex flex-col w-[150px] md:w-auto sm:flex-row sm:flex-wrap sm:items-start relative">
+            {routeData.Rute.map((stop, index) => (
               <li key={index} className="flex flex-col items-start ml-4 py-3 relative">
-                <div className="block items-center gap-2">
+                <div className="flex items-center gap-2">
                   <FaMapMarkerAlt
                     className={`${
                       index === currentStopIndex ? "text-green-600" : "text-red-500"
@@ -115,27 +121,26 @@ export default function Manualbus() {
                   />
                   <span
                     className={`${
-                      findData.Rute.length <= 10 ? "text-sm" : "text-xs"
+                      routeData.Rute.length <= 10 ? "text-sm" : "text-xs"
                     }`}
                   >
-                    {stop}
+                    {stop.name}
                   </span>
                 </div>
-
-                {findData.Distance?.[index] && (
+                {stop.Distance && (
                   <span className="text-gray-500 block text-xs mt-1 ml-10 sm:ml-0 text-center">
-                    {findData.Distance[index]}
+                    {stop.Distance}
                     <HiOutlineArrowNarrowRight className="ml-1 rotate-90 sm:rotate-0 text-gray-400 inline" />
                   </span>
                 )}
               </li>
             ))}
 
-            {/* === Bus Icon (Animated Move) === */}
+            {/* === Animated Bus Icon === */}
             <motion.div
               className="absolute left-[100px] md:left-[16px] top-0"
-              animate={{ top: currentStopIndex * 60 }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
+              animate={{ top: (busPosition / 100) * (routeData.Rute.length * 60) }}
+              transition={{ duration: 1, ease: "easeInOut" }}
             >
               <FontAwesomeIcon
                 icon={faBusSide}
@@ -159,7 +164,7 @@ export default function Manualbus() {
           <p className="mt-1 text-gray-600">
             Stop:{" "}
             <span className="font-semibold text-blue-600">
-              {findData?.Rute?.[currentStopIndex]}
+              {routeData?.Rute?.[currentStopIndex]?.name}
             </span>
           </p>
           <p className="mt-1 text-gray-600">
