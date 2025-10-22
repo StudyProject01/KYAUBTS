@@ -7,7 +7,6 @@ import { faBusSide } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { getDatabase, ref, onValue } from "firebase/database";
 
-
 // === Haversine Distance Formula ===
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
@@ -31,7 +30,8 @@ export default function Manualbus() {
   const [prev, setPrev] = useState(null);
   const [distance, setDistance] = useState(0);
   const [eta, setEta] = useState(null);
-  const [busPosition, setBusPosition] = useState(0); // for smooth animation
+  const [busPosition, setBusPosition] = useState(0);
+  const [direction, setDirection] = useState("forward"); // ✅ new
 
   // === Load route data ===
   useEffect(() => {
@@ -51,26 +51,33 @@ export default function Manualbus() {
     const unsubscribe = onValue(busRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
-
       const now = Date.now();
 
       if (prev) {
-        const timeDiff = (now - prev.time) / 1000; // seconds
+        const timeDiff = (now - prev.time) / 1000;
         const dist = getDistanceFromLatLon(prev.lat, prev.lng, data.lat, data.lng);
-        const newSpeed = (dist / (timeDiff / 3600)); // km/h
+        const newSpeed = dist / (timeDiff / 3600);
         setSpeed(newSpeed);
 
-        // Find nearest stop based on live GPS
-        const nearestIndex = routeData.Rute.reduce((closest, stop, idx) => {
-          const stopLat = stop.latitude;
-          const stopLng = stop.longitude;
-          const d = getDistanceFromLatLon(data.lat, data.lng, stopLat, stopLng);
-          return d < closest.dist ? { index: idx, dist: d } : closest;
-        }, { index: 0, dist: Infinity }).index;
+        // === Find Nearest Stop ===
+        const nearestIndex = routeData.Rute.reduce(
+          (closest, stop, idx) => {
+            const d = getDistanceFromLatLon(data.lat, data.lng, stop.latitude, stop.longitude);
+            return d < closest.dist ? { index: idx, dist: d } : closest;
+          },
+          { index: 0, dist: Infinity }
+        ).index;
+
+        // === Direction determine ===
+        if (nearestIndex > currentStopIndex) {
+          setDirection("forward"); // Campus → Bazar_Station
+        } else if (nearestIndex < currentStopIndex) {
+          setDirection("backward"); // Bazar_Station → Campus
+        }
 
         setCurrentStopIndex(nearestIndex);
 
-        // Next Stop Distance
+        // === Next Stop Distance & ETA ===
         if (nearestIndex < routeData.Rute.length - 1) {
           const nextStop = routeData.Rute[nearestIndex + 1];
           const distToNext = getDistanceFromLatLon(
@@ -81,7 +88,6 @@ export default function Manualbus() {
           );
           setDistance(distToNext);
 
-          // ETA Calculation
           if (newSpeed > 0) {
             const timeHr = distToNext / newSpeed;
             const timeMin = timeHr * 60;
@@ -91,7 +97,7 @@ export default function Manualbus() {
           }
         }
 
-        // Smooth animation progress (based on distance ratio)
+        // === Smooth Animation Progress ===
         const progress = (nearestIndex / (routeData.Rute.length - 1)) * 100;
         setBusPosition(progress);
       }
@@ -100,13 +106,11 @@ export default function Manualbus() {
     });
 
     return () => unsubscribe();
-  }, [prev, routeData]);
+  }, [prev, routeData, currentStopIndex]);
 
   return (
     <div className="p-4">
-      <p className="text-lg font-bold mb-4">
-        {routeData?.Location} Route
-      </p>
+      <p className="text-lg font-bold mb-4">{routeData?.Location} Route</p>
 
       <div className="flex flex-row md:flex-col items-start gap-4 relative">
         {routeData?.Rute?.length ? (
@@ -139,12 +143,21 @@ export default function Manualbus() {
             {/* === Animated Bus Icon === */}
             <motion.div
               className="absolute left-[100px] md:left-[16px] top-0"
-              animate={{ top: (busPosition / 100) * (routeData.Rute.length * 60) }}
+              animate={{
+                top:
+                  direction === "forward"
+                    ? (busPosition / 100) * (routeData.Rute.length * 60)
+                    : ((100 - busPosition) / 100) * (routeData.Rute.length * 60),
+              }}
               transition={{ duration: 1, ease: "easeInOut" }}
             >
               <FontAwesomeIcon
                 icon={faBusSide}
-                className="text-orange-500 text-2xl block transform rotate-90 sm:rotate-0"
+                className={`text-orange-500 text-2xl block transform ${
+                  direction === "backward"
+                    ? "rotate-[270deg] sm:rotate-180"
+                    : "rotate-90 sm:rotate-0"
+                }`}
               />
             </motion.div>
           </ul>
@@ -177,6 +190,14 @@ export default function Manualbus() {
             ETA:{" "}
             <span className="font-semibold text-purple-600">
               {eta ? `${eta} min` : "Calculating..."}
+            </span>
+          </p>
+          <p className="mt-1 text-gray-600">
+            Direction:{" "}
+            <span className="font-semibold text-pink-600">
+              {direction === "forward"
+                ? "Campus → Bazar_Station"
+                : "Bazar_Station → Campus"}
             </span>
           </p>
         </div>
