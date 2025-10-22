@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBusSide } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { getDatabase, ref, onValue } from "firebase/database";
-import  db from "../../firebase"
+
 
 // === Haversine Distance Formula ===
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
@@ -45,7 +45,7 @@ export default function Manualbus() {
   // === Firebase Live Location Listener ===
   useEffect(() => {
     if (!routeData) return;
-    // const db = getDatabase();
+    const db = getDatabase();
     const busRef = ref(db, "bus/currentLocation");
 
     const unsubscribe = onValue(busRef, (snapshot) => {
