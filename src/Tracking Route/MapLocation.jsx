@@ -60,11 +60,11 @@ export default function Maplocation() {
   const [rotation, setRotation] = useState(0);
   const markerRef = useRef(null);
 
-  const busNumber = "KYAU_BUS"; // এখানে bus number পরিবর্তন করতে পারবেন
+  const busNumber = "KYAU_BUS"; // Bus number পরিবর্তন করতে পারেন
 
   useEffect(() => {
     const gpsRef = ref(db, "gps");
-    onValue(gpsRef, (snapshot) => {
+    const unsubscribe = onValue(gpsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const newPos = [data.latitude, data.longitude];
@@ -77,11 +77,14 @@ export default function Maplocation() {
           setRotation(angle);
         }
 
-        setPrevPosition(position);
+        // Update positions
+        setPrevPosition(newPos);
         setPosition(newPos);
       }
     });
-  }, [position, prevPosition]);
+
+    return () => unsubscribe();
+  }, [prevPosition]); // position remove from dependency
 
   // Apply rotation to marker using CSS transform
   useEffect(() => {
