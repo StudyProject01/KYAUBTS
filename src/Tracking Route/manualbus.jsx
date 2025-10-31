@@ -6,9 +6,9 @@ import { faBusSide } from "@fortawesome/free-solid-svg-icons";
 import { motion } from "framer-motion";
 import { getDatabase, ref, onValue } from "firebase/database";
 
-// === Haversine Distance Formula ===
+// === Haversine Formula ===
 function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
+  const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -21,204 +21,281 @@ function getDistanceFromLatLon(lat1, lon1, lat2, lon2) {
 }
 
 export default function Manualbus() {
-  const [routes, setRoutes] = useState([]);
   const { busId } = useParams();
+  const [routes, setRoutes] = useState([]);
+  const [routeData, setRouteData] = useState(null);
 
+  const [useFirebase, setUseFirebase] = useState(false);
   const [currentStopIndex, setCurrentStopIndex] = useState(0);
-  const [speed, setSpeed] = useState(0);
-  const [prev, setPrev] = useState(null);
+  const [direction, setDirection] = useState("forward");
+  const [busPosition, setBusPosition] = useState(0);
   const [distance, setDistance] = useState(0);
   const [eta, setEta] = useState(null);
-  const [busPosition, setBusPosition] = useState(0);
-  const [direction, setDirection] = useState("forward");
+  const [speed, setSpeed] = useState(30);
   const [completedStops, setCompletedStops] = useState([]);
 
   // === Load route data ===
   useEffect(() => {
     fetch("/routeApi.json")
       .then((res) => res.json())
-      .then((data) => setRoutes(data));
-  }, []);
+      .then((data) => {
+        setRoutes(data);
+        const found = data.find((d) => d.id == busId);
+        setRouteData(found);
+      });
+  }, [busId]);
 
-  const routeData = routes.find((data) => data.id == busId);
+  // === Calculate UI bus position based on nearest stop ===
+  const calculateProgress = (nearestIndex, lat, lng) => {
+    if (!routeData?.Rute?.length) return 0;
 
-  // === Firebase live update ===
-  useEffect(() => {
+    const stops = routeData.Rute;
+    const totalStops = stops.length - 1;
+    if (nearestIndex <= 0) return 0;
+    if (nearestIndex >= totalStops) return 100;
+
+    const prev = stops[nearestIndex - 1];
+    const next = stops[nearestIndex];
+    const segDist =
+      getDistanceFromLatLon(prev.latitude, prev.longitude, next.latitude, next.longitude) || 1;
+    const distFromPrev = getDistanceFromLatLon(prev.latitude, prev.longitude, lat, lng);
+    const segmentPercent = distFromPrev / segDist;
+    const positionPercent = ((nearestIndex - 1 + segmentPercent) / totalStops) * 100;
+
+    return Math.max(0, Math.min(positionPercent, 100));
+  };
+
+  // ================= FIREBASE MODE =================
+  function startFirebase() {
     if (!routeData) return;
+    setUseFirebase(true);
+
     const db = getDatabase();
     const busRef = ref(db, "bus/currentLocation");
 
-    const unsubscribe = onValue(busRef, (snapshot) => {
+    onValue(busRef, (snapshot) => {
       const data = snapshot.val();
       if (!data) return;
-      const now = Date.now();
 
-      if (prev) {
-        const timeDiff = (now - prev.time) / 1000;
-        const dist = getDistanceFromLatLon(prev.lat, prev.lng, data.lat, data.lng);
-        const newSpeed = dist / (timeDiff / 3600);
-        setSpeed(newSpeed);
+      if (data.speed) setSpeed(data.speed); // live speed update
 
-        // Find nearest stop
-        const nearestIndex = routeData.Rute.reduce(
-          (closest, stop, idx) => {
-            const d = getDistanceFromLatLon(data.lat, data.lng, stop.latitude, stop.longitude);
-            return d < closest.dist ? { index: idx, dist: d } : closest;
-          },
-          { index: 0, dist: Infinity }
-        ).index;
+      let nearestIndex = 0;
+      let minDist = Infinity;
 
-        // Direction check
-        if (nearestIndex > currentStopIndex) setDirection("forward");
-        else if (nearestIndex < currentStopIndex) setDirection("backward");
-
-        // ✅ Mark overtaken stops as completed
-        if (nearestIndex > currentStopIndex) {
-          const overtaken = Array.from({ length: nearestIndex }, (_, i) => i);
-          setCompletedStops((prev) => [...new Set([...prev, ...overtaken])]);
+      routeData.Rute.forEach((stop, idx) => {
+        const d = getDistanceFromLatLon(data.lat, data.lng, stop.latitude, stop.longitude);
+        if (d < minDist) {
+          minDist = d;
+          nearestIndex = idx;
         }
+      });
 
-        setCurrentStopIndex(nearestIndex);
+      // Next stop
+      let nextIndex = nearestIndex < routeData.Rute.length - 1 ? nearestIndex + 1 : nearestIndex;
+      const nextStop = routeData.Rute[nextIndex];
 
-        // ETA Calculation
-        if (nearestIndex < routeData.Rute.length - 1) {
-          const nextStop = routeData.Rute[nearestIndex + 1];
-          const distToNext = getDistanceFromLatLon(
-            data.lat,
-            data.lng,
-            nextStop.latitude,
-            nextStop.longitude
-          );
-          setDistance(distToNext);
-          if (newSpeed > 0) {
-            const timeHr = distToNext / newSpeed;
-            setEta((timeHr * 60).toFixed(1));
-          } else setEta(null);
-        }
+      const distToNext = getDistanceFromLatLon(data.lat, data.lng, nextStop.latitude, nextStop.longitude);
+      setDistance(distToNext);
 
-        // Smooth progress update (0-100%)
-        const progress = (nearestIndex / (routeData.Rute.length - 1)) * 100;
-        setBusPosition(progress);
+      let etaMin = 0;
+      if (data.speed && distToNext > 0) {
+        etaMin = (distToNext / data.speed) * 60;
+        setEta(etaMin.toFixed(1));
       }
 
-      setPrev({ lat: data.lat, lng: data.lng, time: now });
+      // Smooth animation
+      const startProgress = busPosition;
+      const endProgress = calculateProgress(nextIndex, nextStop.latitude, nextStop.longitude);
+      const duration = etaMin * 60 * 1000 || 1000;
+
+      const startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const currentProgress = startProgress + t * (endProgress - startProgress);
+        setBusPosition(Math.min(Math.max(currentProgress, 0), 100));
+
+        if (t < 1) requestAnimationFrame(animate);
+        else {
+          setCurrentStopIndex(nextIndex);
+          setCompletedStops(Array.from({ length: nextIndex }, (_, i) => i));
+        }
+      };
+      animate();
+
+      setDirection(nextIndex > nearestIndex ? "forward" : "backward");
+    });
+  }
+
+  // ================= TEST MODE (placeholder) =================
+  function testFirebase(lat, lng) {
+    if (!routeData) return;
+    setUseFirebase(false);
+
+    let nearestIndex = 0;
+    let minDist = Infinity;
+
+    routeData.Rute.forEach((stop, idx) => {
+      const d = getDistanceFromLatLon(lat, lng, stop.latitude, stop.longitude);
+      if (d < minDist) {
+        minDist = d;
+        nearestIndex = idx;
+      }
     });
 
-    return () => unsubscribe();
-  }, [prev, routeData, currentStopIndex]);
+    const newProgress = calculateProgress(nearestIndex, lat, lng);
+    setBusPosition(newProgress);
+    setCurrentStopIndex(nearestIndex);
+    setCompletedStops(Array.from({ length: nearestIndex }, (_, i) => i));
+  }
 
+  // ================= MANUAL MODE =================
+function startManual() {
+  if (!routeData) return;
+  setUseFirebase(false);
+
+  let i = 0;
+  let dir = "forward";
+  let reversing = false;
+  const total = routeData.Rute.length;
+
+  const moveSmooth = () => {
+    if (!routeData.Rute) return;
+
+    const current = routeData.Rute[i];
+    const next = dir === "forward" ? routeData.Rute[i + 1] : routeData.Rute[i - 1];
+    if (!next) return;
+
+    const dist = getDistanceFromLatLon(current.latitude, current.longitude, next.latitude, next.longitude);
+    setDistance(dist);
+
+    const timeMin = (dist / speed) * 60;
+    setEta(timeMin.toFixed(1));
+
+    const totalTimeMs = timeMin * 60 * 1000;
+    const totalSteps = 200;
+    const stepTime = totalTimeMs / totalSteps;
+
+    let step = 0;
+    const smoothInterval = setInterval(() => {
+      step++;
+
+      const progressEach = (1 / (total - 1)) * (1 / totalSteps);
+      setBusPosition((prev) =>
+        dir === "forward" ? prev + progressEach * 100 : prev - progressEach * 100
+      );
+
+      if (step >= totalSteps) {
+        clearInterval(smoothInterval);
+
+        // === Bus reached stop: update currentStopIndex ===
+        if (dir === "forward") {
+          i++;
+        } else {
+          i--;
+        }
+
+        // clamp i within bounds
+        i = Math.max(0, Math.min(i, total - 1));
+
+        setCurrentStopIndex(i);
+
+        // Mark completed stops
+        setCompletedStops((prev) => {
+          const newCompleted = [...prev];
+          if (!newCompleted.includes(i)) newCompleted.push(i);
+          return newCompleted;
+        });
+
+        // handle reverse at route ends
+        if (i === total - 1) dir = "backward";
+        if (i === 0) dir = "forward";
+
+        moveSmooth(); // next segment
+      }
+    }, stepTime);
+  };
+
+  moveSmooth();
+}
+
+
+  // ================= INIT =================
+  useEffect(() => {
+    // startFirebase(); // uncomment to use live mode
+    startManual(); // manual simulation
+      if (routeData) {
+      // setTimeout(() => testFirebase(24.395186, 89.691672));
+    }
+  }, [routeData]);
+
+  // ================= UI =================
   return (
     <div className="p-4">
       <p className="text-lg font-bold mb-6">{routeData?.Location} Route</p>
 
-      {routeData?.Rute?.length ? (
-        <div className="relative flex flex-col">
-          {/* === Horizontal route line === */}
-         <div className="flex  md:flex-col">
-           <div className="relative h-full md:w-full md:h-2 bg-gray-300 rounded-full mb-8">
-            {/* Green progress bar */}
+      {routeData?.Rute ? (
+        <div>
+          <div className="relative h-2 bg-gray-300 rounded-full mb-12 overflow-visible">
             <motion.div
-              className="absolute left-0 top-0 h-2 bg-green-500 rounded-full origin-left"
-              animate={{
-                scaleX:
-                  direction === "forward"
-                    ? busPosition / 100
-                    : (100 - busPosition) / 100,
-              }}
-              transition={{ duration: 0.8, ease: "easeInOut" }}
-              style={{ transformOrigin: "left" }}
+              className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+              style={{ width: `${busPosition}%`, transition: "width 0.8s ease-in-out" }}
             />
-
-            {/* Bus icon moving along the line */}
             <motion.div
-              className="absolute -top-1 md:top-[-20px] w-6 h-6 flex justify-center items-center z-10 md:z-20"
-              animate={{
-                left:
-                  direction === "forward"
-                    ? `${busPosition}%`
-                    : `${100 - busPosition}%`,
-              }}
-              transition={{ duration: 1, ease: "easeInOut" }}
+              className="absolute -top-6 w-12 h-12 flex justify-center items-center z-20"
+              animate={{ left: `${busPosition}%`, scaleX: direction === "forward" ? 1 : -1 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
             >
-              <FontAwesomeIcon
-                icon={faBusSide}
-                className={`text-orange-500 text-2xl ${
-                  direction === "backward" ? "rotate-180" : ""
-                }`}
-              />
+              <FontAwesomeIcon icon={faBusSide} className="text-orange-500 text-4xl" />
             </motion.div>
           </div>
 
-          {/* === Stops === */}
-{/* === Stops === */}
-<div className="w-full flex flex-col md:flex-row justify-between items-center">
-  {routeData.Rute.map((stop, index) => (
-    <div key={index} className="flex flex-col items-center mb-4 md:mb-0">
-      <FaMapMarkerAlt
-        className={`text-xl mb-1 ${
-          index === currentStopIndex
-            ? "text-yellow-500"
-            : completedStops.includes(index)
-            ? "text-green-600"
-            : "text-gray-400"
-        }`}
-      />
-      <span
-        className={`text-[10px] md:text-xs text-center ${
-          completedStops.includes(index)
-            ? "text-green-700 font-semibold"
-            : index === currentStopIndex
-            ? "text-yellow-500 font-semibold"
-            : "text-gray-600"
-        }`}
-      >
-        {stop.name}
-      </span>
-    </div>
-  ))}
-</div>
-         </div>
+          {/* Stops */}
+          <div className="flex justify-between items-center">
+            {routeData.Rute.map((stop, index) => (
+              <div key={index} className="flex flex-col items-center relative -top-4">
+                <FaMapMarkerAlt
+                  className={`text-xl ${
+                    index === currentStopIndex
+                      ? "text-yellow-500"
+                      : completedStops.includes(index)
+                      ? "text-green-600"
+                      : "text-gray-400"
+                  }`}
+                />
+                <span className="text-[10px] md:text-xs mt-1">{stop.name}</span>
+              </div>
+            ))}
+          </div>
 
-
-          {/* === Live Info Panel === */}
+          {/* Info card */}
           <div className="mt-8 bg-white p-4 rounded-xl shadow-md w-full max-w-sm">
             <h2 className="text-md font-bold text-gray-700">🚍 Live Status</h2>
             <p className="mt-2 text-gray-600">
-              Speed:{" "}
-              <span className="font-semibold text-orange-500">
-                {speed.toFixed(2)} km/h
-              </span>
+              Stop: <span className="font-semibold text-blue-600">{routeData?.Rute?.[currentStopIndex]?.name}</span>
             </p>
             <p className="mt-1 text-gray-600">
-              Stop:{" "}
-              <span className="font-semibold text-blue-600">
-                {routeData?.Rute?.[currentStopIndex]?.name}
-              </span>
+              Speed: <span className="font-semibold text-orange-500">{speed.toFixed(2)} km/h</span>
             </p>
             <p className="mt-1 text-gray-600">
-              Distance to next:{" "}
-              <span className="font-semibold text-green-600">
-                {distance.toFixed(2)} km
-              </span>
+              Distance to next: <span className="font-semibold text-green-600">{distance.toFixed(2)} km</span>
             </p>
             <p className="mt-1 text-gray-600">
-              ETA:{" "}
-              <span className="font-semibold text-purple-600">
-                {eta ? `${eta} min` : "Calculating..."}
-              </span>
+              ETA: <span className="font-semibold text-purple-600">{eta ? `${eta} min` : "Calculating..."}</span>
             </p>
             <p className="mt-1 text-gray-600">
               Direction:{" "}
               <span className="font-semibold text-pink-600">
-                {direction === "forward"
-                  ? "Campus → Bazar_Station"
-                  : "Bazar_Station → Campus"}
+                {direction === "forward" ? "Campus → Bazar_Station" : "Bazar_Station → Campus"}
               </span>
+            </p>
+            <p className="mt-1 text-gray-600">
+              Mode: <span className="font-semibold text-gray-700">{useFirebase ? "Firebase Live" : "Manual/Test Simulation"}</span>
             </p>
           </div>
         </div>
       ) : (
-        <p>Bus not found or route is empty</p>
+        <p>Loading route...</p>
       )}
     </div>
   );

@@ -60,15 +60,17 @@
     {
       "name": "Kegir_more",
       "Distance": "1.6K.M",
-      "latitude": 24.24437,
-      "longitude": 89.70024
+      "latitude": 24.233753,
+      "longitude": 89.698109
     },
+    
     {
       "name": "Campus",
       "Distance": "—",
-      "latitude": 24.23414,
-      "longitude": 89.69828
+      "latitude": 24.223850,
+      "longitude": 89.705665
     }
+    
   ]
 }
 ,

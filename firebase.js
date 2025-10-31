@@ -13,8 +13,11 @@ const firebaseConfig = {
   measurementId:import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
 };
 
+console.log(import.meta.env)
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 export { db };
+
+////
